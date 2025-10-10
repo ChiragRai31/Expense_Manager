@@ -1,0 +1,25 @@
+# Node.js
+node_modules/
+npm-debug.log*
+.env
+.DS_Store
+coverage/
+
+# Backend env (explicit)
+/backend/.env
+
+# Logs
+logs
+*.log
+pids
+*.pid
+
+# Build output
+dist/
+build/
+
+# OS files
+Thumbs.db
+
+# VSCode
+.vscode/
