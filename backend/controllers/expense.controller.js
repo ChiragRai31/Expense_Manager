@@ -42,8 +42,8 @@ export const getAllExpenses =async(req,res)=>{
         else if(done.toLowerCase()==="undone"){
             query.done = false;
         };
-        const expenses=await Expense.find(query);
-        if(!expenses || expenses.length===0){
+        const expense=await Expense.find(query);
+        if(!expense || expense.length===0){
             return res.status(404).json({
                 message:"No expenses found",
                 success:false
@@ -51,7 +51,7 @@ export const getAllExpenses =async(req,res)=>{
         };
         return res.status(200).json({
             message:"Expenses fetched successfully",
-            expenses,
+            expense,
             success:true
         })
     } catch (error) {
