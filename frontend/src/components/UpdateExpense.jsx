@@ -48,28 +48,31 @@ const UpdateExpense = ({ expense }) => {
     amount: "",
     category: "",
     customCategory: "",
+    type: "expense", // 👈 new: default type
   });
 
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
-  // 🧩 Initialize form data properly (handle custom category)
+  // 🧩 Initialize form data properly (handle custom category & type)
   useEffect(() => {
     if (expense) {
+      const type = expense.amount < 0 ? "income" : "expense";
       if (predefinedCategories.includes(expense.category)) {
         setFormData({
           description: expense.description || "",
-          amount: expense.amount || "",
+          amount: Math.abs(expense.amount) || "",
           category: expense.category,
           customCategory: "",
+          type,
         });
       } else {
-        // if category is custom (like "Insurance")
         setFormData({
           description: expense.description || "",
-          amount: expense.amount || "",
+          amount: Math.abs(expense.amount) || "",
           category: "others",
           customCategory: expense.category || "",
+          type,
         });
       }
     }
@@ -83,6 +86,10 @@ const UpdateExpense = ({ expense }) => {
     setFormData({ ...formData, category: value });
   };
 
+  const handleTypeChange = (e) => {
+    setFormData({ ...formData, type: e.target.value });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -91,9 +98,15 @@ const UpdateExpense = ({ expense }) => {
         ? formData.customCategory
         : formData.category;
 
+    // 👇 Apply negative sign if type is income
+    const finalAmount =
+      formData.type === "income"
+        ? -Math.abs(Number(formData.amount))
+        : Math.abs(Number(formData.amount));
+
     const payload = {
       description: formData.description,
-      amount: formData.amount,
+      amount: finalAmount,
       category: finalCategory,
     };
 
@@ -112,14 +125,13 @@ const UpdateExpense = ({ expense }) => {
         const updatedExpenses = expenses.map((exp) =>
           exp._id === expense._id ? res.data.expense : exp
         );
-
         dispatch(setExpense(updatedExpenses));
         toast.success(res.data.message);
         setIsOpen(false);
       }
     } catch (error) {
       console.error(error);
-      toast.error("Something went wrong while updating the expense");
+      toast.error("Something went wrong while updating the record");
     } finally {
       setLoading(false);
     }
@@ -143,14 +155,15 @@ const UpdateExpense = ({ expense }) => {
 
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Update Expense</DialogTitle>
+          <DialogTitle>Update Transaction</DialogTitle>
           <DialogDescription>
-            Update your expense details and click “Update”.
+            Modify details below and click “Update”.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
+            {/* Description */}
             <div className="grid gap-3 grid-cols-4 items-center">
               <Label htmlFor="description">Description</Label>
               <Input
@@ -163,6 +176,7 @@ const UpdateExpense = ({ expense }) => {
               />
             </div>
 
+            {/* Amount */}
             <div className="grid gap-3 grid-cols-4 items-center">
               <Label htmlFor="amount">Amount</Label>
               <Input
@@ -170,11 +184,41 @@ const UpdateExpense = ({ expense }) => {
                 name="amount"
                 placeholder="xxxx in ₹"
                 className="col-span-3"
+                type="number"
                 value={formData.amount}
                 onChange={handleChange}
               />
             </div>
 
+            {/* Type (Income or Expense) */}
+            <div className="grid gap-3 grid-cols-4 items-center">
+              <Label htmlFor="type">Type</Label>
+              <div className="col-span-3 flex gap-4">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="type"
+                    value="expense"
+                    checked={formData.type === "expense"}
+                    onChange={handleTypeChange}
+                  />
+                  <span>Expense</span>
+                </label>
+
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="type"
+                    value="income"
+                    checked={formData.type === "income"}
+                    onChange={handleTypeChange}
+                  />
+                  <span>Income</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Category */}
             <div className="grid gap-3 grid-cols-4 items-center">
               <Label htmlFor="category">Category</Label>
               <div className="col-span-3">

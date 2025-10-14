@@ -3,8 +3,9 @@ import './App.css';
 import Home from "./components/Home";
 import Login from "./components/Login";
 import SignUp from "./components/SignUp";
+import Transactions from "./components/Section/Transactions";
 import { Toaster } from "@/components/ui/sonner"
- 
+import Statistics from "./components/Section/Statistics";
 const appRouter = createBrowserRouter([
   {
     path: "/",
@@ -17,7 +18,15 @@ const appRouter = createBrowserRouter([
   {
     path:'/signup',
     element:<SignUp/>
-  }
+  },
+  {
+    path:'/transactions',
+    element:<Transactions/>
+  },
+  {
+  path: "/statistics",
+  element: <Statistics />
+}
 ])
 function App() {
   return (

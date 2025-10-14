@@ -11,13 +11,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-
 import {
   Select,
   SelectContent,
   SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -34,17 +32,23 @@ const CreateExpense = () => {
     amount: "",
     category: "",
     customCategory: "",
+    type: "expense", // 👈 new field
   });
   const [loading, setLoading] = React.useState(false);
   const [isOpen, setIsOpen] = React.useState(false);
   const dispatch = useDispatch();
-  const {expenses}=useSelector(store => store.expense);
+  const { expenses } = useSelector((store) => store.expense);
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleCategoryChange = (value) => {
     setFormData({ ...formData, category: value });
+  };
+
+  const handleTypeChange = (e) => {
+    setFormData({ ...formData, type: e.target.value });
   };
 
   const handleSubmit = async (e) => {
@@ -54,9 +58,15 @@ const CreateExpense = () => {
         ? formData.customCategory
         : formData.category;
 
+    // 👇 Apply negative value if type is "income"
+    const finalAmount =
+      formData.type === "income"
+        ? -Math.abs(Number(formData.amount))
+        : Math.abs(Number(formData.amount));
+
     const payload = {
       description: formData.description,
-      amount: formData.amount,
+      amount: finalAmount,
       category: finalCategory,
     };
 
@@ -70,15 +80,22 @@ const CreateExpense = () => {
           withCredentials: true,
         }
       );
+
       if (res.data.success) {
         dispatch(setExpense([...expenses, res.data.expense]));
         toast.success(res.data.message);
         setIsOpen(false);
-        
+        setFormData({
+          description: "",
+          amount: "",
+          category: "",
+          customCategory: "",
+          type: "expense",
+        });
       }
     } catch (error) {
       console.error(error);
-      toast.error("Something went wrong");
+      toast.error("Something went wrong while adding transaction");
     } finally {
       setLoading(false);
     }
@@ -88,20 +105,21 @@ const CreateExpense = () => {
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button onClick={() => setIsOpen(true)} variant="outline">
-          Add New Expense
+          Add New Transaction
         </Button>
       </DialogTrigger>
 
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add Expense</DialogTitle>
+          <DialogTitle>Add Transaction</DialogTitle>
           <DialogDescription>
-            Create a new expense and assign it to a category.
+            Create a new income or expense entry and assign it to a category.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
+            {/* Description */}
             <div className="grid gap-3 grid-cols-4 items-center">
               <Label htmlFor="description">Description</Label>
               <Input
@@ -114,6 +132,7 @@ const CreateExpense = () => {
               />
             </div>
 
+            {/* Amount */}
             <div className="grid gap-3 grid-cols-4 items-center">
               <Label htmlFor="amount">Amount</Label>
               <Input
@@ -121,11 +140,41 @@ const CreateExpense = () => {
                 name="amount"
                 placeholder="xxxx in ₹"
                 className="col-span-3"
+                type="number"
                 value={formData.amount}
                 onChange={handleChange}
               />
             </div>
 
+            {/* Type: Income or Expense */}
+            <div className="grid gap-3 grid-cols-4 items-center">
+              <Label htmlFor="type">Type</Label>
+              <div className="col-span-3 flex gap-4">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="type"
+                    value="expense"
+                    checked={formData.type === "expense"}
+                    onChange={handleTypeChange}
+                  />
+                  <span>Expense</span>
+                </label>
+
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="type"
+                    value="income"
+                    checked={formData.type === "income"}
+                    onChange={handleTypeChange}
+                  />
+                  <span>Income</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Category */}
             <div className="grid gap-3 grid-cols-4 items-center">
               <Label htmlFor="category">Category</Label>
               <div className="col-span-3">
@@ -153,7 +202,7 @@ const CreateExpense = () => {
                   </SelectContent>
                 </Select>
 
-                {/* Show custom category input only when 'Others' is selected */}
+                {/* Custom category input */}
                 {formData.category === "others" && (
                   <Input
                     name="customCategory"

@@ -1,41 +1,80 @@
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableFooter,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import React, { useState, useEffect, useMemo } from "react";
 import { useSelector } from "react-redux";
-import { Checkbox } from "./ui/checkbox";
+import { Input } from "./ui/input";
 import { Button } from "./ui/button";
-import { Trash } from "lucide-react";
-import UpdateExpense from "./UpdateExpense";
-import { useState, useEffect } from "react";
+import { Checkbox } from "./ui/checkbox";
+import { PlusCircle, RefreshCcw, Import, Search, Trash } from "lucide-react";
 import axios from "axios";
 import { toast } from "sonner";
+import UpdateExpense from "./UpdateExpense";
+import dayjs from "dayjs";
 
 const ExpenseTable = () => {
   const { expenses } = useSelector((store) => store.expense);
   const [localExpenses, setLocalExpenses] = useState(expenses);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  // keep localExpenses in sync with redux
   useEffect(() => {
     setLocalExpenses(expenses);
   }, [expenses]);
 
-  // ✅ compute total only for undone expenses
-  const totalAmount = localExpenses.reduce((acc, expense) => {
-    return expense.done ? acc : acc + expense.amount;
-  }, 0);
+  // === Search filter ===
+  const filtered = useMemo(() => {
+    const lower = search.toLowerCase();
+    return localExpenses.filter(
+      (e) =>
+        e.description?.toLowerCase().includes(lower) ||
+        e.category?.toLowerCase().includes(lower)
+    );
+  }, [localExpenses, search]);
 
-  // ✅ toggle done/undone
+  // === Group by date ===
+  const grouped = useMemo(() => {
+    const map = {};
+    filtered.forEach((exp) => {
+      const dateKey = dayjs(exp.date || exp.createdAt).format("MMMM DD, YYYY");
+      if (!map[dateKey]) map[dateKey] = [];
+      map[dateKey].push(exp);
+    });
+    return Object.entries(map).sort(
+      (a, b) => dayjs(b[0]).valueOf() - dayjs(a[0]).valueOf()
+    );
+  }, [filtered]);
+
+  // === Totals ===
+  const totalPending = localExpenses
+    .filter((e) => !e.done)
+    .reduce((sum, e) => sum + Number(e.amount || 0), 0);
+  const totalIncome = localExpenses
+    .filter((e) => e.amount < 0)
+    .reduce((s, e) => s + Math.abs(e.amount), 0);
+  const totalExpense = localExpenses
+    .filter((e) => e.amount > 0)
+    .reduce((s, e) => s + e.amount, 0);
+
+  // === Refresh ===
+  const handleRefresh = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get("http://localhost:8000/api/v1/expense/getall", {
+        withCredentials: true,
+      });
+      if (res.data.success) {
+        setLocalExpenses(res.data.expense);
+        toast.success("Transactions refreshed");
+      }
+    } catch {
+      toast.error("Failed to refresh transactions");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // === Toggle done ===
   const handleCheckboxChange = async (id) => {
-    const expense = localExpenses.find((e) => e._id === id);
-    const newStatus = !expense.done;
-
+    const exp = localExpenses.find((e) => e._id === id);
+    const newStatus = !exp.done;
     try {
       const res = await axios.put(
         `http://localhost:8000/api/v1/expense/${id}/done`,
@@ -45,118 +84,172 @@ const ExpenseTable = () => {
           withCredentials: true,
         }
       );
-
       if (res.data.success) {
-        toast.success(res.data.message);
         setLocalExpenses((prev) =>
-          prev.map((exp) =>
-            exp._id === id ? { ...exp, done: newStatus } : exp
+          prev.map((item) =>
+            item._id === id ? { ...item, done: newStatus } : item
           )
         );
+        toast.success(res.data.message);
       }
-    } catch (error) {
-      console.error(error);
+    } catch {
       toast.error("Failed to update expense status");
     }
   };
 
-  // ✅ delete expense
+  // === Delete ===
   const removeExpenseHandler = async (id) => {
     try {
       const res = await axios.delete(
         `http://localhost:8000/api/v1/expense/delete/${id}`,
         { withCredentials: true }
       );
-
       if (res.data.success) {
         toast.success(res.data.message);
-        setLocalExpenses((prev) =>
-          prev.filter((expense) => expense._id !== id)
-        );
+        setLocalExpenses((prev) => prev.filter((e) => e._id !== id));
       }
-    } catch (error) {
-      console.error(error);
+    } catch {
       toast.error("Failed to delete expense");
     }
   };
 
   return (
-    <Table>
-      <TableCaption>A list of your recent expenses.</TableCaption>
+    <div className="space-y-6">
+      {/* ===== Header ===== */}
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b pb-4">
+        <h2 className="text-xl font-semibold text-gray-800">Transaction List</h2>
 
-      <TableHeader>
-        <TableRow>
-          <TableHead className="w-[150px]">Mark As Done</TableHead>
-          <TableHead>Description</TableHead>
-          <TableHead>Amount</TableHead>
-          <TableHead>Category</TableHead>
-          <TableHead>Date</TableHead>
-          <TableHead className="text-right">Actions</TableHead>
-        </TableRow>
-      </TableHeader>
+        <div className="flex gap-2">
+          <Button
+            onClick={handleRefresh}
+            variant="outline"
+            className="flex items-center gap-1"
+          >
+            <RefreshCcw size={16} className={loading ? "animate-spin" : ""} />
+          </Button>
+        </div>
+      </div>
 
-      <TableBody>
-        {localExpenses.length === 0 ? (
-          <TableRow>
-            <TableCell colSpan={6} className="text-center text-gray-500 py-4">
-              Add Your First Expense
-            </TableCell>
-          </TableRow>
+      {/* ===== Totals & Search ===== */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="text-sm text-gray-600">
+          <p>
+            <span className="font-semibold text-green-600">
+              Total Income: ₹{totalIncome.toLocaleString()}
+            </span>{" "}
+            |{" "}
+            <span className="font-semibold text-red-600">
+              Total Expense: ₹{totalExpense.toLocaleString()}
+            </span>{" "}
+            |{" "}
+            <span className="font-semibold text-gray-800">
+              Pending Total: ₹{totalPending.toLocaleString()}
+            </span>
+          </p>
+        </div>
+
+        <div className="flex items-center relative w-[250px]">
+          <Search
+            size={16}
+            className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500"
+          />
+          <Input
+            placeholder="Search transaction"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-8"
+          />
+        </div>
+      </div>
+
+      {/* ===== Transaction Groups ===== */}
+      <div className="border rounded-lg bg-white shadow-sm">
+        {grouped.length === 0 ? (
+          <div className="text-center py-10 text-gray-500">
+            No transactions found
+          </div>
         ) : (
-          localExpenses.map((expense) => (
-            <TableRow key={expense._id}>
-              <TableCell className="font-medium">
-                <Checkbox
-                  checked={expense.done}
-                  onCheckedChange={() => handleCheckboxChange(expense._id)}
-                />
-              </TableCell>
+          grouped.map(([date, list]) => (
+            <div key={date} className="p-4 border-b last:border-none">
+              {/* Date Header */}
+              <div className="flex items-center gap-3 mb-3">
+                <span className="font-semibold text-gray-700">{date}</span>
+                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                  {dayjs(date).format("dddd")}
+                </span>
+              </div>
 
-              <TableCell className={expense.done ? "line-through" : ""}>
-                {expense.description}
-              </TableCell>
+              {/* Column Header */}
+              <div className="hidden sm:grid grid-cols-6 text-xs font-medium text-gray-500 border-b pb-1 mb-2">
+                <span>Done</span>
+                <span>Time</span>
+                <span>Description</span>
+                <span>Amount</span>
+                <span>Category</span>
+                <span className="text-center">Actions</span>
+              </div>
 
-              <TableCell className={expense.done ? "line-through" : ""}>
-                ₹{expense.amount}
-              </TableCell>
-
-              <TableCell className={expense.done ? "line-through" : ""}>
-                {expense.category}
-              </TableCell>
-
-              <TableCell className={expense.done ? "line-through" : ""}>
-                {expense.createdAt?.split("T")[0]}
-              </TableCell>
-
-              <TableCell className="text-right">
-                <div className="flex items-center justify-end gap-2">
-                  <UpdateExpense expense={expense} />
-                  <Button
-                    onClick={() => removeExpenseHandler(expense._id)}
-                    size="icon"
-                    className="rounded-full border text-red-600 border-red-600 hover:border-transparent"
-                    variant="outline"
+              {/* Transactions */}
+              <div className="space-y-2">
+                {list.map((tx) => (
+                  <div
+                    key={tx._id}
+                    className={`grid grid-cols-6 items-center text-sm py-2 border-b last:border-none ${
+                      tx.done ? "opacity-60 line-through" : ""
+                    }`}
                   >
-                    <Trash className="h-4 w-4" />
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
+                    {/* Done */}
+                    <div className="flex justify-start">
+                      <Checkbox
+                        checked={tx.done}
+                        onCheckedChange={() => handleCheckboxChange(tx._id)}
+                      />
+                    </div>
+
+                    {/* Time */}
+                    <div className="text-gray-500">
+                      {dayjs(tx.date || tx.createdAt).format("hh:mm A")}
+                    </div>
+
+                    {/* Description */}
+                    <div className="text-gray-800 truncate">
+                      {tx.description || "No description"}
+                    </div>
+
+                    {/* Amount */}
+                    <div
+                      className={`font-semibold ${
+                        tx.amount < 0 ? "text-green-600" : "text-red-600"
+                      }`}
+                    >
+                      ₹{Math.abs(tx.amount).toLocaleString()}
+                    </div>
+
+                    {/* Category */}
+                    <div className="font-medium text-gray-700">
+                      {tx.category || "Uncategorized"}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex justify-center gap-2">
+                      <UpdateExpense expense={tx} />
+                      <Button
+                        onClick={() => removeExpenseHandler(tx._id)}
+                        size="icon"
+                        className="rounded-full border text-red-600 border-red-600 hover:border-transparent"
+                        variant="outline"
+                      >
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           ))
         )}
-      </TableBody>
-
-      <TableFooter>
-        <TableRow>
-          <TableCell colSpan={5} className="font-bold text-lg">
-            Total
-          </TableCell>
-          <TableCell className="text-right font-bold text-lg">
-            ₹{totalAmount}
-          </TableCell>
-        </TableRow>
-      </TableFooter>
-    </Table>
+      </div>
+    </div>
   );
 };
 
