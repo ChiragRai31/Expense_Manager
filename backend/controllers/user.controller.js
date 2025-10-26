@@ -55,15 +55,21 @@ export const login = async (req, res) => {
             userId: user._id,
         }
         const token = await jwt.sign(tokenData, process.env.SECRET_KEY, {expiresIn: '1d'});
-        return res.status(200).cookie("token", token, {maxAge: 1 * 24 * 60 * 60 * 1000, httpOnly: true,sameSite: 'strict'}).json({
-            message: `Welcome back ${user.fullname}`,
-            success: true,
-            user: {
-                _id:user._id,
-                fullname: user.fullname,
-                email: user.email,
-            }
-        })
+       return res.status(200).cookie("token", token, {
+  httpOnly: true,
+  secure: true,            // 🔥 required for HTTPS (Render)
+  sameSite: "none",        // 🔥 required for cross-domain cookie
+  maxAge: 24 * 60 * 60 * 1000 // 1 day
+}).json({
+  message: `Welcome back ${user.fullname}`,
+  success: true,
+  user: {
+    _id: user._id,
+    fullname: user.fullname,
+    email: user.email,
+  }
+});
+
 
 
     } catch (error) {
@@ -72,7 +78,13 @@ export const login = async (req, res) => {
 }
 export const logout = async (req, res) => {
     try {
-        return res.status(200).cookie("token", "", {maxAge: 0}).json({
+       return res.status(200).cookie("token", "", {
+  httpOnly: true,
+  secure: true,
+  sameSite: "none",
+  expires: new Date(0)
+}).json({
+
             message: "Logged out successfully",
             success: true,
         })

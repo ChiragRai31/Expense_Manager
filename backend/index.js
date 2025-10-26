@@ -19,6 +19,8 @@ const corsOptions={
     "http://localhost:5173",  // local dev
     "https://expense-manager-1-8pyj.onrender.com" // your frontend URL
   ],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
     credentials:true,
 }
 app.use(cors(corsOptions));     
