@@ -49,7 +49,7 @@ const Login = () => {
       
       {/* Boat image - top left, background decorative */}
       <img
-        src="./src/assets/Boat.png"
+        src="Boat.png"
         alt="Boat illustration"
         className="absolute top-0 right-0 w-1/3 object-contain opacity-90"
       />

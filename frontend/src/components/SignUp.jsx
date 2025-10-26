@@ -42,7 +42,7 @@ const SignUp = () => {
          */}
         {/* Hand image - top right, outside the form */}
         <img
-          src="./src/assets/ImageofHand.png"
+          src="ImageofHand.png"
           alt="Hand illustration"
           className="absolute top-0 right-0 w-1/3 object-contain opacity-90"
         />
@@ -80,7 +80,7 @@ const SignUp = () => {
 
         {/* Guy image - bottom left, outside the form */}
         <img
-          src="./src/assets/Guy.png"
+          src="Guy.png"
           alt="Guy illustration"
           className="absolute bottom-0 left-0 object-contain opacity-90 w-24"
         />
