@@ -1,6 +1,6 @@
 import React from "react";
 import NavBar from "./NavBar"
-import Sidebar from "./SideBar";
+import Sidebar from "./Sidebar";
 import Overview from "../components/Section/Overview";
 
 const Home = () => {

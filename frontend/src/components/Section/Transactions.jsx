@@ -1,6 +1,6 @@
 import React from "react";
 import NavBar from "../NavBar";
-import Sidebar from "../SideBar";
+import Sidebar from "../Sidebar";
 import ExpenseTable from "../ExpenseTable";
 import CreateExpense from "../CreateExpense";
 import {

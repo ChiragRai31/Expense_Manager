@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../lib/api";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -112,8 +112,8 @@ const UpdateExpense = ({ expense }) => {
 
     try {
       setLoading(true);
-      const res = await axios.put(
-        `http://localhost:8000/api/v1/expense/update/${expense._id}`,
+      const res = await api.put(
+        `/api/v1/expense/update/${expense._id}`,
         payload,
         {
           headers: { "Content-Type": "application/json" },

@@ -4,7 +4,7 @@ import { Popover, PopoverTrigger, PopoverContent } from "./ui/popover";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Link } from "react-router-dom";
 import { Button } from "./ui/button";
-import axios from "axios";
+import api from "../lib/api";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -18,7 +18,7 @@ const NavBar = () => {
   const navigate = useNavigate();
   const logoutHandler = async () => {
     try {
-      const res = await axios.get("http://localhost:8000/api/v1/user/logout", {
+      const res = await api.get("/api/v1/user/logout", {
         withCredentials: true,
       });
       if (res.data.success) {

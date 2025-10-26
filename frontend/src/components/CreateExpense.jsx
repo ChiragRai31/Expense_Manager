@@ -1,5 +1,5 @@
 import React from "react";
-import axios from "axios";
+import api from "@/lib/api";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -72,8 +72,8 @@ const CreateExpense = () => {
 
     try {
       setLoading(true);
-      const res = await axios.post(
-        "http://localhost:8000/api/v1/expense/add",
+      const res = await api.post(
+        "/api/v1/expense/add",
         payload,
         {
           headers: { "Content-Type": "application/json" },

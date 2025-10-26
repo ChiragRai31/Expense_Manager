@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import NavBar from "../NavBar";
-import Sidebar from "../SideBar";
+import Sidebar from "../Sidebar";
 import { Card, CardContent } from "../ui/card";
 import {
   PieChart,

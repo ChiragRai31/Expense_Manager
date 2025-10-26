@@ -4,7 +4,7 @@ import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Checkbox } from "./ui/checkbox";
 import { PlusCircle, RefreshCcw, Import, Search, Trash } from "lucide-react";
-import axios from "axios";
+import api from "../lib/api";
 import { toast } from "sonner";
 import UpdateExpense from "./UpdateExpense";
 import dayjs from "dayjs";
@@ -57,7 +57,7 @@ const ExpenseTable = () => {
   const handleRefresh = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:8000/api/v1/expense/getall", {
+      const res = await api.get("/api/v1/expense/getall", {
         withCredentials: true,
       });
       if (res.data.success) {
@@ -76,8 +76,8 @@ const ExpenseTable = () => {
     const exp = localExpenses.find((e) => e._id === id);
     const newStatus = !exp.done;
     try {
-      const res = await axios.put(
-        `http://localhost:8000/api/v1/expense/${id}/done`,
+      const res = await api.put(
+        `/api/v1/expense/${id}/done`,
         { done: newStatus },
         {
           headers: { "Content-Type": "application/json" },
@@ -100,8 +100,8 @@ const ExpenseTable = () => {
   // === Delete ===
   const removeExpenseHandler = async (id) => {
     try {
-      const res = await axios.delete(
-        `http://localhost:8000/api/v1/expense/delete/${id}`,
+      const res = await api.delete(
+        `/api/v1/expense/delete/${id}`,
         { withCredentials: true }
       );
       if (res.data.success) {

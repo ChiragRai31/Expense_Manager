@@ -4,7 +4,7 @@ import { Label } from './ui/label';
 import Logo from './shared/Logo';
 import { Button } from './ui/button';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../lib/api';
 import { toast } from 'sonner';
 import { useDispatch } from 'react-redux';
 import { setAuthUser } from '../redux/authSlice';
@@ -25,7 +25,7 @@ const Login = () => {
   const submitHandler = async(e) => {
     e.preventDefault();
     try{        
-    const res= await axios.post("http://localhost:8000/api/v1/user/login",input,{
+    const res= await api.post("/api/v1/user/login",input,{
         header:{
             "Content-Type":"application/json"
         },
